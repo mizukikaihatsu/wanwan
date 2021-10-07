@@ -13,7 +13,7 @@ const	SCR_HEIGHT	= 16;					//	画面タイルサイズの半分の高さ
 const	SCR_WIDTH	= 16;					//	画面タイルサイズの半分の幅
 const	SCROLL		= 4;					//	スクロール速度
 const	SMOOTH		= 0;					//	補間処理
-const	START_HP	= 20;					//	開始HP
+const	START_HP	= 40;					//	開始HP
 const	START_X		= 27;					//	開始位置X
 const	START_Y		= 16;					//	開始位置Y
 const	TILECOLUMN	= 4;					//	タイル桁数
@@ -23,11 +23,11 @@ const	WNDSTYLE = "rgba( 0, 0, 0, 0.75 )";	//	ウィンドウの色
 
 const	gKey = new Uint8Array( 0x100 );		//	キー入力バッファ
 
-let		gAngle = 0;							//	プレイヤーの向き
-let		gEx = 0;							//	プレイヤーの経験値
-let		gHP = START_HP;						//	プレイヤーのHP
-let		gMHP = START_HP;					//	プレイヤーの最大HP
-let		gLv = 1;							//	プレイヤーのレベル
+let		gAngle = 0;							//	ビーグルの向き
+let		gEx = 0;							//	ビーグルの経験値
+let		gHP = START_HP;						//	ビーグルのHP
+let		gMHP = START_HP;					//	ビーグルの最大HP
+let		gLv = 1;							//	ビーグルのレベル
 let		gCursor = 0;						//	カーソル位置
 let		gEnemyHP;							//	敵HP
 let		gEnemyType;							//	敵種別
@@ -37,7 +37,7 @@ let		gWidth;								//	実画面の幅
 let		gImgBoss;							//	画像。ラスボス
 let		gImgMap;							//	画像。マップ
 let		gImgMonster;						//	画像。モンスター
-let		gImgPlayer;							//	画像。プレイヤー
+let		gImgPlayer;							//	画像。ビーグル
 let		gItem = 0;							//	所持アイテム
 let		gMessage1 = null;					//	表示メッセージ１
 let		gMessage2 = null;					//	表示メッセージ２
@@ -45,8 +45,8 @@ let		gMoveX = 0;							//	移動量X
 let		gMoveY = 0;							//	移動量Y
 let		gOrder;								//	行動順
 let		gPhase = 0;							//	戦闘フェーズ
-let		gPlayerX = START_X * TILESIZE + TILESIZE / 2;	//	プレイヤー座標X
-let		gPlayerY = START_Y * TILESIZE + TILESIZE / 2;	//	プレイヤー座標Y
+let		gPlayerX = START_X * TILESIZE + TILESIZE / 2;	//	ビーグル座標X
+let		gPlayerY = START_Y * TILESIZE + TILESIZE / 2;	//	ビーグル座標Y
 let		gScreen;							//	仮想画面
 
 
@@ -57,9 +57,8 @@ const	gFilePlayer		= "img/player2.png";
 
 const	gEncounter = [ 0, 0, 0, 1, 0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0 ];	//	敵エンカウント確率
 
-const	gMonsterName = [ "スライム", "ドラキー", "おおきづち", "ゴースト", "おおねずみ", "西京最強魔王ネギ" ];	//	モンスター名称
+const	gMonsterName = [ "スライム", "ドラキー", "おおきづち", "ゴースト", "おおねずみ", "最強魔王ネギ" ];	//	モンスター名称
 
-//	マップ
 
 
 //	戦闘行動処理
@@ -70,14 +69,14 @@ function Action()
 	if( ( ( gPhase + gOrder ) & 1 ) == 0 ){				//	敵の行動順の場合
 		const	d = GetDamage( gEnemyType + 2 );
 		SetMessage( gMonsterName[ gEnemyType ] + "の攻撃！", d + " のダメージ！" );
-		gHP -= d;										//	プレイヤーのHP減少
-		if( gHP <= 0 ){									//	プレイヤーが死亡した場合
+		gHP -= d;										//	ビーグルのHP減少
+		if( gHP <= 0 ){									//	ビーグルが死亡した場合
 			gPhase = 7;									//	死亡フェーズ
 		}
 		return;
 	}
 
-	//	プレイヤーの行動順
+	//	ビーグルの行動順
 	if( gCursor == 0 ){									//	「戦う」選択時
 		const	d = GetDamage( gLv + 1 );				//	ダメージ計算結果取得
 		SetMessage( "ビーグル犬の攻撃！", d + " のダメージ！" );
@@ -101,11 +100,11 @@ function Action()
 //	経験値加算
 function AddExp( val )
 {
-	gEx += val * 2;											//	経験値加算
+	gEx += val											//	経験値加算
 	// gEx = gEx + val;											//	経験値加算
 	while( gLv * ( gLv + 1 ) * 2 <= gEx ){				//	レベルアップ条件を満たしている場合
 		gLv++;											//	レベルアップ
-		gMHP += 4 + Math.floor( Math.random() * 3 );	//	最大HP上昇10～12
+		gMHP += 3 + Math.floor( Math.random() * 2 );	//	最大HP上昇3～4
 	}
 }
 
@@ -114,7 +113,7 @@ function AddExp( val )
 function AppearEnemy( t )
 {
 	gPhase = 1;								//	敵出現フェーズ
-	gEnemyHP = t * 4 + t ** 3 + 7;					//	敵HP
+	gEnemyHP = t * 2;					//	敵HP
 	gEnemyType = t;
 	SetMessage( "敵が現れた！", null );
 }
@@ -157,8 +156,8 @@ function DrawFight( g )
 function DrawField( g )
 {
 
-	let		mx = Math.floor( gPlayerX / TILESIZE );			//	プレイヤーのタイル座標X
-	let		my = Math.floor( gPlayerY / TILESIZE );			//	プレイヤーのタイル座標Y
+	let		mx = Math.floor( gPlayerX / TILESIZE );			//	ビーグルのタイル座標X
+	let		my = Math.floor( gPlayerY / TILESIZE );			//	ビーグルのタイル座標Y
 
 	for( let dy = -SCR_HEIGHT; dy <= SCR_HEIGHT; dy++ ){
 		let		ty = my + dy;								//	タイル座標Y
@@ -173,7 +172,7 @@ function DrawField( g )
 		}
 	}
 
-	//	プレイヤー
+	//	ビーグル
 	g.drawImage( gImgPlayer,
 	             ( gFrame >> 4 & 1 ) * CHRWIDTH, gAngle * CHRHEIGHT, CHRWIDTH, CHRHEIGHT,
 	             WIDTH / 2 - CHRWIDTH / 2, HEIGHT / 2 - CHRHEIGHT + TILESIZE / 2, CHRWIDTH, CHRHEIGHT );
@@ -197,14 +196,6 @@ function DrawMain()
 		DrawFight( g );
 	}
 
-/*
-	g.fillStyle = WNDSTYLE;							//	ウィンドウの色
-	g.fillRect( 20, 3, 105, 15 );					//	矩形描画
-
-	g.font = FONT;									//	文字フォントを設定
-	g.fillStyle = FONTSTYLE;						//	文字色
-	g.fillText( "x=" + gPlayerX + " y=" + gPlayerY + " m=" + gMap[ my * MAP_WIDTH + mx ], 25, 15 );
-*/
 }
 
 
@@ -271,11 +262,10 @@ function LoadImage()
 	gImgBoss    = new Image();	gImgBoss.src    = gFileBoss;	//	ラスボス画像読み込み
 	gImgMap     = new Image();	gImgMap.src     = gFileMap;		//	マップ画像読み込み
 	gImgMonster = new Image();	gImgMonster.src = gFileMonster;	//	モンスター画像読み込み
-	gImgPlayer  = new Image();	gImgPlayer.src  = gFilePlayer;	//	プレイヤー画像読み込み
+	gImgPlayer  = new Image();	gImgPlayer.src  = gFilePlayer;	//	ビーグル画像読み込み
 }
 
 
-//function SetMessage( v1, v2 = null )	//	IE対応
 function SetMessage( v1, v2 )
 {
 	gMessage1 = v1;
@@ -325,7 +315,7 @@ function TickField()
 	if( Math.abs( gMoveX ) + Math.abs( gMoveY ) == SCROLL ){	//	マス目移動が終わる直前
 		if( m == 8 || m == 9 ){		//	お城
 			gHP = gMHP;										//	HP全回復
-			SetMessage( "破壊神を倒してください！", null );
+			SetMessage( "破壊神を倒してください！","村で体力が回復します" );
 		}
 
 		if( m == 4 || m == 5 ){		//	お城
@@ -337,7 +327,7 @@ function TickField()
 			SetMessage( "西の果てにも", "村があります" );
 		}
 
-		if(m == 11 ){	//	街
+		if(m == 11 ){	//	オアシス
 			gHP = gMHP;										//	HP全回復
 			SetMessage( "疲れたワン", "一休みするワン" );
 		}
@@ -372,7 +362,7 @@ function TickField()
 				t += 16;									//	敵レベルを0.5上昇
 			}
 			if( m == 7 ){		//	マップタイプが山だった場合
-				t += 32;								//	敵レベルを1上昇
+				t += 16;									//	敵レベルを0.5上昇
 			}
 			t += Math.random() * 8;						//	敵レベルを0～0.5上昇
 			t = Math.floor( t / 16 );
@@ -381,8 +371,8 @@ function TickField()
 		}
 	}
 
-	gPlayerX += Sign( gMoveX ) * SCROLL;		//	プレイヤー座標移動X
-	gPlayerY += Sign( gMoveY ) * SCROLL;		//	プレイヤー座標移動Y
+	gPlayerX += Sign( gMoveX ) * SCROLL;		//	ビーグル座標移動X
+	gPlayerY += Sign( gMoveY ) * SCROLL;		//	ビーグル座標移動Y
 	gMoveX -= Sign( gMoveX ) * SCROLL;			//	移動量消費X
 	gMoveY -= Sign( gMoveY ) * SCROLL;			//	移動量消費Y
 
@@ -480,7 +470,7 @@ window.onkeydown = function( ev )
 
 	if( gPhase == 6 ){
 		if( IsBoss() && gCursor == 0 ){		//	敵がラスボスで、かつ「戦う」選択時
-			SetMessage( "魔王を倒し", "世界に平和が訪れた" );
+			SetMessage( "破壊神を倒し", "世界に平和が訪れた" );
 			return;
 		}
 		gPhase = 0;					//	マップ移動フェーズ
@@ -493,7 +483,7 @@ window.onkeydown = function( ev )
 	}
 
 	if( gPhase == 8 ){
-		SetMessage( "ゲームオーバー", null );
+		SetMessage( "ゲームオーバー","リロードしてください" );
 		return;
 	}
 
